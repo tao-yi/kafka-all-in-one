@@ -1,6 +1,15 @@
-version: "3"
+version: "3.9"
 
 services:
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+    ports:
+      - 3306:3306
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+
   zookeeper:
     image: zookeeper:3.4.9
     hostname: zookeeper
@@ -15,6 +24,8 @@ services:
     volumes:
       - ./data/zookeeper/data:/data
       - ./data/zookeeper/datalog:/datalog
+    depends_on:
+      - mysql
   kafka1:
     image: confluentinc/cp-kafka:5.3.0
     hostname: kafka1
@@ -29,16 +40,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     volumes:
       - ./data/kafka1/data:/var/lib/kafka/data
-    depends_on:
-      - zookeeper
-  kafdrop:
-    image: obsidiandynamics/kafdrop
-    container_name: kafdrop
-    environment:
-      - KAFKA_BROKERCONNECT=kafka2:19092
-      - JVM_OPTS=-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify
-    ports:
-      - 9009:9000
     depends_on:
       - zookeeper
   kafka2:
@@ -56,7 +57,7 @@ services:
     volumes:
       - ./data/kafka2/data:/var/lib/kafka/data
     depends_on:
-      - zookeeper
+      - kafka1
   kafka3:
     image: confluentinc/cp-kafka:5.3.0
     hostname: kafka3
@@ -72,4 +73,76 @@ services:
     volumes:
       - ./data/kafka3/data:/var/lib/kafka/data
     depends_on:
-      - zookeeper
+      - kafka1
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    container_name: kafdrop
+    environment:
+      - KAFKA_BROKERCONNECT=kafka1:19091
+      - JVM_OPTS=-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify
+    ports:
+      - 9009:9000
+    depends_on:
+      - kafka1
+
+  mysql-connector:
+    image: confluentinc/cp-kafka-connect:6.1.1
+    container_name: mysql-connector
+    hostname: connect
+    ports:
+      - "28083:28083"
+    environment:
+      # host:port pair for establishing the initial connection to the kafka cluster
+      - CONNECT_BOOTSTRAP_SERVERS=kafka1:19091
+      - CONNECT_REST_PORT=28083
+      # a unique string that identifies the connect cluster group this worker belongs to
+      - CONNECT_GROUP_ID=quickstart
+      # topic in which to store connector and task configuration data
+      # this must be the same for all workers with the same group.id
+      - CONNECT_CONFIG_STORAGE_TOPIC=quickstart-config
+      # topic in which to store offset data for connectors
+      # this must be the same for all workers with the same group.id
+      - CONNECT_OFFSET_STORAGE_TOPIC=quickstart-offsets
+      # topic in which to store state for connectors
+      # this must be the same for all workers with the same group.id
+      - CONNECT_STATUS_STORAGE_TOPIC=quickstart-status
+      - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
+      # Converter class for keys. This controls the format of the data that will be written to Kafka for source connectors or read from Kafka for sink connectors.
+      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      # Converter class for values. This controls the format of the data that will be written to Kafka for source connectors or read from Kafka for sink connectors.
+      - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_REST_ADVERTISED_HOST_NAME=localhost
+      # - CONNECT_LOG4J_ROOT_LOGLEVEL=DEBUG
+      - CONNECT_PLUGIN_PATH=/usr/share/java,/etc/kafka-connect/jars
+    volumes:
+      - ./lib:/etc/kafka-connect/jars
+    depends_on:
+      - kafka3
+      # - CONNECT_PLUGIN_PATH=/usr/share/java
+
+  # control-center:
+  #   image: confluentinc/cp-enterprise-control-center:6.1.1
+  #   hostname: control-center
+  #   container_name: control-center
+  #   depends_on:
+  #     - kafka1
+  #     # - schema-registry
+  #     - kafka-connect
+  #   ports:
+  #     - "9021:9021"
+  #   environment:
+  #     CONTROL_CENTER_BOOTSTRAP_SERVERS: "kafka1:19091"
+  #     CONTROL_CENTER_CONNECT_CLUSTER: "connect:8083"
+  #     # CONTROL_CENTER_KSQL_KSQLDB1_URL: "http://ksqldb-server:8088"
+  #     # CONTROL_CENTER_KSQL_KSQLDB1_ADVERTISED_URL: "http://localhost:8088"
+  #     # CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+  #     CONTROL_CENTER_REPLICATION_FACTOR: 1
+  #     CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+  #     CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+  #     CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+  #     PORT: 9021

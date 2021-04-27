@@ -1,0 +1,10 @@
+{
+  "name": "kafka-nodejs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "kafkajs": "^1.15.0"
+  }
+}
