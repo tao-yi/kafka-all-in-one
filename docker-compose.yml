@@ -103,14 +103,14 @@ services:
       - KAFKA_BROKERCONNECT=kafka1:19091
       - JVM_OPTS=-Xms16M -Xmx48M
     ports:
-      - 9009:9000
+      - 9000:9000
     depends_on:
       - kafka1
 
   mysql-connector:
-    image: confluentinc/cp-kafka-connect:6.1.1
+    image: confluentinc/cp-kafka-connect:latest
     container_name: mysql-connector
-    hostname: connect
+    hostname: mysql-connector
     ports:
       - "28083:28083"
     environment:
@@ -118,16 +118,16 @@ services:
       - CONNECT_BOOTSTRAP_SERVERS=kafka1:19091
       - CONNECT_REST_PORT=28083
       # a unique string that identifies the connect cluster group this worker belongs to
-      - CONNECT_GROUP_ID=quickstart
+      - CONNECT_GROUP_ID=quickstart-mysql
       # topic in which to store connector and task configuration data
       # this must be the same for all workers with the same group.id
-      - CONNECT_CONFIG_STORAGE_TOPIC=quickstart-config
+      - CONNECT_CONFIG_STORAGE_TOPIC=quickstart-mysql-config
       # topic in which to store offset data for connectors
       # this must be the same for all workers with the same group.id
-      - CONNECT_OFFSET_STORAGE_TOPIC=quickstart-offsets
+      - CONNECT_OFFSET_STORAGE_TOPIC=quickstart-mysql-offsets
       # topic in which to store state for connectors
       # this must be the same for all workers with the same group.id
-      - CONNECT_STATUS_STORAGE_TOPIC=quickstart-status
+      - CONNECT_STATUS_STORAGE_TOPIC=quickstart-mysql-status
       - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
       - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
       - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
@@ -139,12 +139,41 @@ services:
       - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
       - CONNECT_REST_ADVERTISED_HOST_NAME=localhost
       # - CONNECT_LOG4J_ROOT_LOGLEVEL=DEBUG
-      - CONNECT_PLUGIN_PATH=/usr/share/java,/etc/kafka-connect/jars
+      - CONNECT_PLUGIN_PATH=/usr/share/java,/etc/kafka/plugins
     volumes:
-      - ./lib:/etc/kafka-connect/jars
+      - ./connect_plugins/mysql:/etc/kafka/plugins
     depends_on:
       - kafka1
-      # - CONNECT_PLUGIN_PATH=/usr/share/java
+
+  elasticsearch-connector:
+    image: confluentinc/cp-kafka-connect:latest
+    container_name: elasticsearch-connector
+    hostname: elasticsearch-connector
+    ports:
+      - "28084:28083"
+    environment:
+      - CONNECT_BOOTSTRAP_SERVERS=kafka1:19091
+      - CONNECT_REST_PORT=28084
+      - CONNECT_GROUP_ID=quickstart-elasticsearch
+      - CONNECT_CONFIG_STORAGE_TOPIC=quickstart-elasticsearch-config
+      - CONNECT_OFFSET_STORAGE_TOPIC=quickstart-elasticsearch-offsets
+      - CONNECT_STATUS_STORAGE_TOPIC=quickstart-elasticsearch-status
+      - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.storage.StringConverter
+      - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      # - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL="http://localhost:8081"
+      # - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL="http://localhost:8081"
+      - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.storage.StringConverter
+      - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_REST_ADVERTISED_HOST_NAME=localhost
+      - CONNECT_LOG4J_ROOT_LOGLEVEL=DEBUG
+      - CONNECT_PLUGIN_PATH=/usr/share/java,/etc/kafka/plugins
+    volumes:
+      - ./connect_plugins/elasticsearch:/etc/kafka/plugins
+    depends_on:
+      - kafka1
 
   # control-center:
   #   image: confluentinc/cp-enterprise-control-center:6.1.1
