@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   mysql:
-    image: mysql:latest
+    image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: test
     ports:
@@ -58,29 +58,29 @@ services:
       - ./data/kafka2/data:/var/lib/kafka/data
     depends_on:
       - kafka1
-  kafka3:
-    image: confluentinc/cp-kafka:5.3.0
-    hostname: kafka3
-    ports:
-      - "9093:9093"
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka3:19093,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_BROKER_ID: 3
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    volumes:
-      - ./data/kafka3/data:/var/lib/kafka/data
-    depends_on:
-      - kafka1
+  # kafka3:
+  #   image: confluentinc/cp-kafka:5.3.0
+  #   hostname: kafka3
+  #   ports:
+  #     - "9093:9093"
+  #   environment:
+  #     KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka3:19093,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9093
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+  #     KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+  #     KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+  #     KAFKA_BROKER_ID: 3
+  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #   volumes:
+  #     - ./data/kafka3/data:/var/lib/kafka/data
+  #   depends_on:
+  #     - kafka1
 
   kafdrop:
     image: obsidiandynamics/kafdrop
     container_name: kafdrop
     environment:
       - KAFKA_BROKERCONNECT=kafka1:19091
-      - JVM_OPTS=-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify
+      - JVM_OPTS=-Xms16M -Xmx48M
     ports:
       - 9009:9000
     depends_on:
@@ -122,7 +122,7 @@ services:
     volumes:
       - ./lib:/etc/kafka-connect/jars
     depends_on:
-      - kafka3
+      - kafka1
       # - CONNECT_PLUGIN_PATH=/usr/share/java
 
   # control-center:
