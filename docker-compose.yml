@@ -33,22 +33,25 @@ services:
 
   zookeeper:
     image: zookeeper:3.4.9
+    container_name: zookeeper
     hostname: zookeeper
     ports:
       - "2181:2181"
     environment:
       # unique ID of this ZooKeeper instance
-      ZOO_MY_ID: 1
-      ZOO_PORT: 2181
+      - ZOO_MY_ID=1
+      - ZOO_PORT=2181
       # list of zookeeper servers
-      ZOO_SERVERS: server.1=zookeeper:2888:3888
+      - ZOO_SERVERS=server.1=zookeeper:2888:3888
+      - ALLOW_ANONYMOUS_LOGIN=yes
     volumes:
       - ./data/zookeeper/data:/data
       - ./data/zookeeper/datalog:/datalog
     depends_on:
       - mysql
   kafka1:
-    image: confluentinc/cp-kafka:5.3.0
+    image: confluentinc/cp-kafka:5.5.4
+    container_name: kafka1
     hostname: kafka1
     ports:
       - "9091:9091"
@@ -64,7 +67,8 @@ services:
     depends_on:
       - zookeeper
   kafka2:
-    image: confluentinc/cp-kafka:5.3.0
+    image: confluentinc/cp-kafka:5.5.4
+    container_name: kafka2
     hostname: kafka2
     ports:
       - "9092:9092"
@@ -80,7 +84,8 @@ services:
     depends_on:
       - kafka1
   kafka3:
-    image: confluentinc/cp-kafka:5.3.0
+    image: confluentinc/cp-kafka:5.5.4
+    container_name: kafka3
     hostname: kafka3
     ports:
       - "9093:9093"
@@ -106,6 +111,14 @@ services:
       - 9000:9000
     depends_on:
       - kafka1
+
+  # kafka_manager:
+  #   image: hlebalbau/kafka-manager:stable
+  #   ports:
+  #     - "9000:9000"
+  #   environment:
+  #     ZK_HOSTS: "zookeeper:2181"
+  #     APPLICATION_SECRET: "random-secret"
 
   mysql-connector:
     image: confluentinc/cp-kafka-connect:latest
@@ -138,10 +151,10 @@ services:
       - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
       - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
       - CONNECT_REST_ADVERTISED_HOST_NAME=localhost
-      # - CONNECT_LOG4J_ROOT_LOGLEVEL=DEBUG
-      - CONNECT_PLUGIN_PATH=/usr/share/java,/etc/kafka/plugins
+      - CONNECT_LOG4J_ROOT_LOGLEVEL=INFO
+      - CONNECT_PLUGIN_PATH=/usr/share/java,/etc/kafka-connect/jars
     volumes:
-      - ./connect_plugins/mysql:/etc/kafka/plugins
+      - ./connect_plugins/mysql:/etc/kafka-connect/jars
     depends_on:
       - kafka1
 
@@ -153,7 +166,7 @@ services:
       - "28084:28083"
     environment:
       - CONNECT_BOOTSTRAP_SERVERS=kafka1:19091
-      - CONNECT_REST_PORT=28084
+      - CONNECT_REST_PORT=28083
       - CONNECT_GROUP_ID=quickstart-elasticsearch
       - CONNECT_CONFIG_STORAGE_TOPIC=quickstart-elasticsearch-config
       - CONNECT_OFFSET_STORAGE_TOPIC=quickstart-elasticsearch-offsets
@@ -168,10 +181,10 @@ services:
       - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.storage.StringConverter
       - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
       - CONNECT_REST_ADVERTISED_HOST_NAME=localhost
-      - CONNECT_LOG4J_ROOT_LOGLEVEL=DEBUG
-      - CONNECT_PLUGIN_PATH=/usr/share/java,/etc/kafka/plugins
+      - CONNECT_LOG4J_ROOT_LOGLEVEL=INFO
+      - CONNECT_PLUGIN_PATH=/usr/share/java,/etc/kafka-connect/jars
     volumes:
-      - ./connect_plugins/elasticsearch:/etc/kafka/plugins
+      - ./connect_plugins/elasticsearch:/etc/kafka-connect/jars
     depends_on:
       - kafka1
 

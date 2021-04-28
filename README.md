@@ -11,3 +11,13 @@ $ docker-compose up -d
 - kafdrop: `localhost:9000`
 - mysql-connector: `localhost:28083`
 - elasticsearch-connector: `localhost:28084`
+
+### Kafka Connect REST interface
+
+```shell
+# get a list of active connectors
+$ curl -X GET localhost:28083/connectors
+
+# update connector configs
+$ curl -X PUT /connectors/(string:name)/config -d '{"config": {"topics":"quickstart-mysql-topic"} }'
+```
