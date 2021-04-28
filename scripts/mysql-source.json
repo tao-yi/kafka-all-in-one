@@ -9,8 +9,13 @@
     "mode": "incrementing",
     "incrementing.column.name": "id",
     "timestamp.column.name": "modified",
-    "topic.regex": "mysql-.*",
+    "topics.regex": "mysql-.*",
     "topic.prefix": "mysql-",
-    "poll.interval.ms": 1000
+    "poll.interval.ms": 1000,
+    "transforms": "createKey,extractInt",
+    "transforms.createKey.type": "org.apache.kafka.connect.transforms.ValueToKey",
+    "transforms.createKey.fields": "id",
+    "transforms.extractInt.type": "org.apache.kafka.connect.transforms.ExtractField$Key",
+    "transforms.extractInt.field": "id"
   }
 }
