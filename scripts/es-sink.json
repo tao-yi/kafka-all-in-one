@@ -1,0 +1,11 @@
+{
+  "name": "quickstart-elasticsearch-sink",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "connection.url":"http://elasticsearch:9200",
+    "tasks.max": 1,
+    "topic.regex": "mysql-.*",
+    "topic.prefix": "mysql-",
+    "poll.interval.ms": 1000
+  }
+}
