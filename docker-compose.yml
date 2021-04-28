@@ -2,13 +2,13 @@ version: "3.9"
 
 services:
   mysql:
-    image: mysql:8.0
+    image: bitnami/mysql:latest
     environment:
-      MYSQL_ROOT_PASSWORD: test
+      MYSQL_ROOT_PASSWORD: root
     ports:
       - 3306:3306
     volumes:
-      - ./mysql-data:/var/lib/mysql
+      - ./data/mysql:/var/lib/mysql
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.11.2
@@ -17,7 +17,7 @@ services:
     ports:
       - 9200:9200
     volumes:
-      - ./es-data:/usr/share/elasticsearch/data
+      - ./data/es:/usr/share/elasticsearch/data
     environment:
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -130,7 +130,7 @@ services:
       # host:port pair for establishing the initial connection to the kafka cluster
       - CONNECT_BOOTSTRAP_SERVERS=kafka1:19091
       - CONNECT_REST_PORT=28083
-      # a unique string that identifies the connect cluster group this worker belongs to
+      # unique name for the cluster, used in forming the Connect cluster group. Note that this must not conflict with consumer group IDs
       - CONNECT_GROUP_ID=quickstart-mysql
       # topic in which to store connector and task configuration data
       # this must be the same for all workers with the same group.id
@@ -174,11 +174,11 @@ services:
       - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
       - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
       - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
-      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.storage.StringConverter
+      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
       - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
       # - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL="http://localhost:8081"
       # - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL="http://localhost:8081"
-      - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.storage.StringConverter
+      - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
       - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
       - CONNECT_REST_ADVERTISED_HOST_NAME=localhost
       - CONNECT_LOG4J_ROOT_LOGLEVEL=INFO
